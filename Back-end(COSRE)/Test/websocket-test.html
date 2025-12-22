@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CollabSphere WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background-color: white;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 CollabSphere WebSocket Test</h1>
+    
+    <div class="container">
+        <h2>📡 Connection Status</h2>
+        <div id="status" class="status disconnected">Disconnected</div>
+        <button id="connectBtn" onclick="connect()">Connect to WebSocket</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+    </div>
+
+    <div class="container">
+        <h2>🔐 Authentication</h2>
+        <div class="input-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="test@example.com" placeholder="Enter email">
+        </div>
+        <div class="input-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="password123" placeholder="Enter password">
+        </div>
+        <button onclick="login()">Login & Get JWT Token</button>
+        <div id="authStatus"></div>
+    </div>
+
+    <div class="container">
+        <h2>👥 Team Chat</h2>
+        <div class="input-group">
+            <label for="teamId">Team ID:</label>
+            <input type="number" id="teamId" value="1" placeholder="Enter team ID">
+        </div>
+        <button onclick="subscribeToTeam()">Subscribe to Team Chat</button>
+        
+        <h3>💬 Messages</h3>
+        <div id="messages" class="messages"></div>
+        
+        <div class="input-group">
+            <label for="messageContent">Message:</label>
+            <textarea id="messageContent" rows="3" placeholder="Type your message here..."></textarea>
+        </div>
+        <button onclick="sendMessage()" id="sendBtn" disabled>Send Message</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 REST API Test</h2>
+        <button onclick="getChatHistory()">Get Chat History</button>
+        <button onclick="testHealthCheck()">Test Health Check</button>
+        <div id="apiResults"></div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let jwtToken = null;
+        let currentUserId = null;
+        let isConnected = false;
+
+        function updateStatus(message, connected) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = connected ? 'status connected' : 'status disconnected';
+            
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('sendBtn').disabled = !connected || !jwtToken;
+            
+            isConnected = connected;
+        }
+
+        function connect() {
+            const socket = new SockJS('http://localhost:8080/api/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function (frame) {
+                updateStatus('Connected to WebSocket', true);
+                console.log('Connected: ' + frame);
+                addMessage('System', 'Connected to WebSocket server', new Date());
+            }, function (error) {
+                updateStatus('Connection failed: ' + error, false);
+                console.log('Connection error: ' + error);
+                addMessage('System', 'Connection failed: ' + error, new Date());
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            updateStatus('Disconnected', false);
+            console.log("Disconnected");
+            addMessage('System', 'Disconnected from WebSocket server', new Date());
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    jwtToken = data.data.token;
+                    currentUserId = data.data.userId;
+                    document.getElementById('authStatus').innerHTML = 
+                        `<div style="color: green;">✅ Logged in as: ${data.data.fullName} (${data.data.role})</div>
+                         <div>User ID: ${data.data.userId}</div>
+                         <div>Token: ${jwtToken.substring(0, 50)}...</div>`;
+                    
+                    document.getElementById('sendBtn').disabled = !isConnected;
+                } else {
+                    document.getElementById('authStatus').innerHTML = 
+                        `<div class="error">❌ Login failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('authStatus').innerHTML = 
+                    `<div class="error">❌ Login error: ${error.message}</div>`;
+            }
+        }
+
+        function subscribeToTeam() {
+            if (!isConnected) {
+                alert('Please connect to WebSocket first!');
+                return;
+            }
+            
+            const teamId = document.getElementById('teamId').value;
+            
+            stompClient.subscribe('/topic/team/' + teamId, function (message) {
+                const chatMessage = JSON.parse(message.body);
+                addMessage(chatMessage.senderName, chatMessage.content, new Date(chatMessage.timestamp));
+            });
+            
+            addMessage('System', `Subscribed to team ${teamId} chat`, new Date());
+        }
+
+        function sendMessage() {
+            if (!isConnected) {
+                alert('Please connect to WebSocket first!');
+                return;
+            }
+            
+            if (!jwtToken || !currentUserId) {
+                alert('Please login first!');
+                return;
+            }
+            
+            const teamId = document.getElementById('teamId').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (content.trim() === '') {
+                alert('Please enter a message!');
+                return;
+            }
+            
+            const message = {
+                content: content,
+                teamId: parseInt(teamId),
+                senderId: currentUserId
+            };
+            
+            stompClient.send('/app/chat/' + teamId, {}, JSON.stringify(message));
+            document.getElementById('messageContent').value = '';
+        }
+
+        function addMessage(sender, content, timestamp) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const timeStr = timestamp.toLocaleTimeString();
+            messageDiv.innerHTML = `
+                <strong>${sender}</strong> <small>(${timeStr})</small><br>
+                ${content}
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function getChatHistory() {
+            if (!jwtToken) {
+                alert('Please login first!');
+                return;
+            }
+            
+            const teamId = document.getElementById('teamId').value;
+            
+            try {
+                const response = await fetch(`http://localhost:8080/api/teams/${teamId}/messages`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                document.getElementById('apiResults').innerHTML = 
+                    `<h4>Chat History:</h4><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                if (data.status === 'success' && data.data) {
+                    // Clear current messages and load history
+                    document.getElementById('messages').innerHTML = '';
+                    data.data.forEach(msg => {
+                        addMessage(msg.senderName, msg.content, new Date(msg.timestamp));
+                    });
+                }
+            } catch (error) {
+                document.getElementById('apiResults').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testHealthCheck() {
+            try {
+                const response = await fetch('http://localhost:8080/api/health');
+                const data = await response.json();
+                document.getElementById('apiResults').innerHTML = 
+                    `<h4>Health Check:</h4><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('apiResults').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-connect on page load
+        window.onload = function() {
+            addMessage('System', 'WebSocket Test Page Loaded', new Date());
+            addMessage('System', 'Click "Connect to WebSocket" to start testing', new Date());
+        };
+
+        // Handle Enter key in message textarea
+        document.getElementById('messageContent').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
