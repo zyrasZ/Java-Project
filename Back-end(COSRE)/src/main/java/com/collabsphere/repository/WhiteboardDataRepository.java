@@ -1,11 +1,10 @@
 package com.collabsphere.repository;
 
-import java.util.Optional;
-
+import com.collabsphere.entity.WhiteboardData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.collabsphere.entity.WhiteboardData;
+import java.util.Optional;
 
 @Repository
 public interface WhiteboardDataRepository extends JpaRepository<WhiteboardData, Long> {

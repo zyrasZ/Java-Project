@@ -9,9 +9,6 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  BarChartOutlined,
-  FileTextOutlined,
-  UploadOutlined,
   UsergroupAddOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -50,21 +47,6 @@ const AdminLayout = () => {
       key: '/admin/teams',
       icon: <UsergroupAddOutlined />,
       label: 'Quản lý Team',
-    },
-    {
-      key: '/admin/statistics',
-      icon: <BarChartOutlined />,
-      label: 'Thống kê',
-    },
-    {
-      key: '/admin/rubrics',
-      icon: <FileTextOutlined />,
-      label: 'Quản lý Rubric',
-    },
-    {
-      key: '/admin/import',
-      icon: <UploadOutlined />,
-      label: 'Import dữ liệu',
     },
   ];
 

@@ -86,30 +86,30 @@ export const adminService = {
 
   // Class Management APIs
   createClass: async (classData) => {
-    const response = await axiosInstance.post('/admin/classes', classData);
+    const response = await axiosInstance.post('/api/admin/classes', classData);
     return response.data;
   },
 
   getMyClasses: async () => {
-    const response = await axiosInstance.get('/admin/classes');
+    const response = await axiosInstance.get('/api/admin/classes');
     return response.data;
   },
 
   // For ADMIN to get all classes (NEW API)
   getAllClassesAll: async () => {
-    const response = await axiosInstance.get('/admin/classes/all');
+    const response = await axiosInstance.get('/api/admin/classes/all');
     return response.data;
   },
 
   // For ADMIN to get all classes with details (NEW API)
   getAllClassesWithDetails: async () => {
-    const response = await axiosInstance.get('/admin/classes/all/details');
+    const response = await axiosInstance.get('/api/admin/classes/all/details');
     return response.data;
   },
 
   // For ADMIN to get all classes as DTO (NEW API)
   getAllClassesAsDTO: async () => {
-    const response = await axiosInstance.get('/admin/classes/all/dto');
+    const response = await axiosInstance.get('/api/admin/classes/all/dto');
     return response.data;
   },
 
@@ -119,28 +119,28 @@ export const adminService = {
     
     try {
       console.log('🧪 Testing /admin/classes...');
-      results.myClasses = await axiosInstance.get('/admin/classes');
+      results.myClasses = await axiosInstance.get('/api/admin/classes');
     } catch (err) {
       results.myClasses = { error: err.response?.status + ' - ' + err.message };
     }
 
     try {
       console.log('🧪 Testing /admin/classes/all...');
-      results.allClasses = await axiosInstance.get('/admin/classes/all');
+      results.allClasses = await axiosInstance.get('/api/admin/classes/all');
     } catch (err) {
       results.allClasses = { error: err.response?.status + ' - ' + err.message };
     }
 
     try {
       console.log('🧪 Testing /admin/classes/all/details...');
-      results.allClassesDetails = await axiosInstance.get('/admin/classes/all/details');
+      results.allClassesDetails = await axiosInstance.get('/api/admin/classes/all/details');
     } catch (err) {
       results.allClassesDetails = { error: err.response?.status + ' - ' + err.message };
     }
 
     try {
       console.log('🧪 Testing /admin/classes/all/dto...');
-      results.allClassesDTO = await axiosInstance.get('/admin/classes/all/dto');
+      results.allClassesDTO = await axiosInstance.get('/api/admin/classes/all/dto');
     } catch (err) {
       results.allClassesDTO = { error: err.response?.status + ' - ' + err.message };
     }
@@ -149,45 +149,45 @@ export const adminService = {
   },
 
   getAllClasses: async (params = {}) => {
-    const response = await axiosInstance.get('/admin/classes', { params });
+    const response = await axiosInstance.get('/api/admin/classes', { params });
     return response.data;
   },
 
   getClassById: async (id) => {
-    const response = await axiosInstance.get(`/admin/classes/${id}`);
+    const response = await axiosInstance.get(`/api/admin/classes/${id}`);
     return response.data;
   },
 
   updateClass: async (id, classData) => {
-    const response = await axiosInstance.put(`/admin/classes/${id}`, classData);
+    const response = await axiosInstance.put(`/api/admin/classes/${id}`, classData);
     return response.data;
   },
 
   deleteClass: async (id) => {
-    const response = await axiosInstance.delete(`/admin/classes/${id}`);
+    const response = await axiosInstance.delete(`/api/admin/classes/${id}`);
     return response.data;
   },
 
   addStudentToClass: async (classId, email) => {
-    const response = await axiosInstance.post(`/admin/classes/${classId}/students`, { email });
+    const response = await axiosInstance.post(`/api/admin/classes/${classId}/students`, { email });
     return response.data;
   },
 
   removeStudentFromClass: async (classId, email) => {
-    const response = await axiosInstance.delete(`/admin/classes/${classId}/students`, {
+    const response = await axiosInstance.delete(`/api/admin/classes/${classId}/students`, {
       params: { email }
     });
     return response.data;
   },
 
   getClassByCode: async (code) => {
-    const response = await axiosInstance.get(`/admin/classes/code/${code}`);
+    const response = await axiosInstance.get(`/api/admin/classes/code/${code}`);
     return response.data;
   },
 
   // Staff Management
   createStaff: async (staffData) => {
-    const response = await axiosInstance.post('/admin/staff', staffData);
+    const response = await axiosInstance.post('/api/admin/staff', staffData);
     return response.data;
   },
 
@@ -326,3 +326,10 @@ export const adminService = {
     return response.data;
   },
 };
+
+
+
+
+
+
+

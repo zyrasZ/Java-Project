@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/submissions")
+@RequestMapping("/api/submissions")
 public class GradeController {
 
     @Autowired

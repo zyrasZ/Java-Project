@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")  // Bỏ /api vì context-path đã có
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired

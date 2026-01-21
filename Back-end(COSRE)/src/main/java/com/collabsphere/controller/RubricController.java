@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/rubrics")
+@RequestMapping("/api/rubrics")
 public class RubricController {
 
     @Autowired
@@ -106,9 +106,9 @@ public class RubricController {
     }
 
     @GetMapping("/team/{teamId}/scores")
-    public ResponseEntity<ApiResponse<List<RubricScore>>> getTeamScores(@PathVariable Long teamId) {
+    public ResponseEntity<ApiResponse<List<com.collabsphere.dto.RubricScoreDTO>>> getTeamScores(@PathVariable Long teamId) {
         try {
-            List<RubricScore> scores = rubricService.getTeamScores(teamId);
+            List<com.collabsphere.dto.RubricScoreDTO> scores = rubricService.getTeamScores(teamId);
             return ResponseEntity.ok(ApiResponse.success("Team scores retrieved successfully", scores));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

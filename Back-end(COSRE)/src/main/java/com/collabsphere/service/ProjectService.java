@@ -97,7 +97,7 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public Optional<Project> getProjectById(Long id) {
-        return projectRepository.findById(id);
+        return projectRepository.findByIdWithClassRoom(id);
     }
 
     @Transactional(readOnly = true)

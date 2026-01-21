@@ -13,15 +13,42 @@ import java.util.Optional;
 @Repository
 public interface ClassRoomRepository extends JpaRepository<ClassRoom, Long> {
     
-    Optional<ClassRoom> findByCode(String code);
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "WHERE c.code = :code")
+    Optional<ClassRoom> findByCode(@Param("code") String code);
     
     boolean existsByCode(String code);
     
-    List<ClassRoom> findByLecturer(User lecturer);
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "WHERE c.lecturer = :lecturer")
+    List<ClassRoom> findByLecturer(@Param("lecturer") User lecturer);
     
-    @Query("SELECT c FROM ClassRoom c JOIN c.students s WHERE s.id = :studentId")
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "JOIN c.students s WHERE s.id = :studentId")
     List<ClassRoom> findByStudentId(@Param("studentId") Long studentId);
     
-    @Query("SELECT c FROM ClassRoom c WHERE c.name LIKE %:name%")
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "WHERE c.name LIKE %:name%")
     List<ClassRoom> findByNameContaining(@Param("name") String name);
+    
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "LEFT JOIN FETCH c.students s " +
+           "WHERE c.id = :id")
+    Optional<ClassRoom> findByIdWithDetails(@Param("id") Long id);
+    
+    @Query("SELECT DISTINCT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "ORDER BY c.name ASC")
+    List<ClassRoom> findAllWithLecturer();
+    
+    @Query("SELECT DISTINCT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "LEFT JOIN FETCH c.students s " +
+           "ORDER BY c.name ASC")
+    List<ClassRoom> findAllWithDetails();
 }

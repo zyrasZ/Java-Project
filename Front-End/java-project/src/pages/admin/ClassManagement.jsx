@@ -46,39 +46,31 @@ const ClassManagement = () => {
       
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       console.log('👤 Current user:', currentUser);
-      console.log('🔑 Token exists:', !!localStorage.getItem('token'));
       
       let response;
       
       if (currentUser.role === 'ADMIN') {
-        console.log('🔗 Using ADMIN endpoint: /admin/classes/all/details');
-        response = await adminService.getAllClassesWithDetails();
+        console.log('🔗 Using ADMIN endpoint: /admin/classes/all');
+        response = await adminService.getAllClassesAll();
       } else {
         console.log('🔗 Using LECTURER endpoint: /admin/classes');
         response = await adminService.getMyClasses();
       }
       
-      console.log('📦 Raw API response:', response);
-      console.log('📊 Response status:', response?.status);
-      console.log('🗂️ Response data:', response?.data);
-      console.log('📋 Response data type:', typeof response?.data);
-      console.log('📏 Response data length:', Array.isArray(response?.data) ? response.data.length : 'Not array');
+      console.log('📦 API response:', response);
       
       if (response && response.status === 'success') {
         const classesData = response.data || [];
         console.log('✅ Classes data:', classesData);
-        console.log('✅ First class structure:', classesData[0]);
         setClasses(classesData);
       } else {
         console.log('❌ No success status or no data');
-        console.log('❌ Full response structure:', JSON.stringify(response, null, 2));
         setClasses([]);
       }
     } catch (err) {
       console.error('💥 Error fetching classes:', err);
       console.error('💥 Error response:', err.response?.data);
-      console.error('💥 Error status:', err.response?.status);
-      console.error('💥 Error message:', err.message);
+      message.error('Không thể tải danh sách lớp học');
       setClasses([]);
     } finally {
       setLoading(false);
@@ -249,34 +241,7 @@ const ClassManagement = () => {
               >
                 Làm mới
               </Button>
-              <Button
-                type="dashed"
-                onClick={async () => {
-                  try {
-                    console.log('🧪 Testing all class endpoints...');
-                    const results = await adminService.testAllClassEndpoints();
-                    console.log('🧪 Test results:', results);
-                    
-                    // Show summary
-                    const summary = Object.entries(results).map(([key, value]) => {
-                      if (value.error) {
-                        return `❌ ${key}: ${value.error}`;
-                      } else {
-                        const count = value.data?.data?.length || 0;
-                        return `✅ ${key}: ${count} classes`;
-                      }
-                    }).join('\n');
-                    
-                    message.success('Test completed - check console for details');
-                    console.log('📊 Summary:\n' + summary);
-                  } catch (err) {
-                    console.error('🧪 Test failed:', err);
-                    message.error('Test failed - check console');
-                  }
-                }}
-              >
-                🧪 Test All APIs
-              </Button>
+
             </div>
           </Col>
         </Row>

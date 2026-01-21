@@ -37,7 +37,8 @@ import {
   ProjectOutlined,
   CheckOutlined,
   UsergroupAddOutlined,
-  UserOutlined
+  UserOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import { adminService } from '../../services/adminService';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -180,21 +181,55 @@ const TeamManagement = () => {
 
   // API 5.5: Add member to team
   const handleAddMember = async (values) => {
+    const userId = values.userId;
+    const teamId = selectedTeam?.id;
+    const selectedStudent = users.find(u => u.id === userId);
+    
     try {
-      const response = await adminService.addMemberToTeam(selectedTeam?.id, values.userId);
+      console.log('🚀 Adding member:', { teamId, userId });
       
-      if (response && response.status === 'success') {
-        const selectedStudent = users.find(u => u.id === values.userId);
-        message.success(`Đã thêm ${selectedStudent?.fullName || 'sinh viên'} vào team ${selectedTeam?.name}`);
-        
-        await fetchAllTeams();
-        
-        setAddMemberModalVisible(false);
-        addMemberForm.resetFields();
-      }
+      // Try to add member (ignore error for now)
+      await adminService.addMemberToTeam(teamId, userId);
+      
     } catch (err) {
-      console.error('Error adding member:', err);
-      message.error(err.response?.data?.message || 'Thêm thành viên thất bại');
+      console.log('⚠️ Add member API returned error (will verify by checking team data):', err.message);
+      // Don't show error yet, we'll verify by checking the actual team data
+    }
+    
+    // Close modal and reset form
+    setAddMemberModalVisible(false);
+    addMemberForm.resetFields();
+    
+    // Wait a bit for backend to commit
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Refresh all teams data
+    await fetchAllTeams();
+    
+    // Fetch fresh team data to verify if member was added
+    try {
+      const verifyResponse = await adminService.getTeamById(teamId);
+      
+      if (verifyResponse && verifyResponse.status === 'success') {
+        const updatedTeam = verifyResponse.data;
+        
+        // Check if user is now in the team
+        const memberExists = updatedTeam.members?.some(member => member.id === userId);
+        
+        if (memberExists) {
+          message.success(`✅ Đã thêm ${selectedStudent?.fullName || 'sinh viên'} vào team ${selectedTeam?.name} thành công!`);
+          
+          // Update selected team if detail modal is open
+          if (teamDetailModalVisible) {
+            setSelectedTeam(updatedTeam);
+          }
+        } else {
+          message.error(`❌ Không thể thêm ${selectedStudent?.fullName || 'sinh viên'} vào team. Vui lòng thử lại!`);
+        }
+      }
+    } catch (verifyErr) {
+      console.error('❌ Error verifying member addition:', verifyErr);
+      message.error('Không thể xác nhận kết quả. Vui lòng kiểm tra lại team!');
     }
   };
 
@@ -236,6 +271,21 @@ const TeamManagement = () => {
     }
   };
 
+  // Approve project
+  const handleApproveProject = async (projectId, projectTitle) => {
+    try {
+      const response = await adminService.approveProject(projectId);
+      
+      if (response && response.status === 'success') {
+        message.success(`Đã duyệt dự án "${projectTitle}" thành công!`);
+        await fetchAllTeams();
+      }
+    } catch (err) {
+      console.error('Error approving project:', err);
+      message.error(err.response?.data?.message || 'Duyệt dự án thất bại');
+    }
+  };
+
   // API 5.4: Get team by ID
   const handleViewTeamDetail = async (team) => {
     try {
@@ -258,13 +308,17 @@ const TeamManagement = () => {
 
   const handleAddMemberToTeam = async (team) => {
     try {
+      // Fetch fresh team data to get latest members
+      const teamResponse = await adminService.getTeamById(team.id);
+      const freshTeam = teamResponse?.data || team;
+      
       // Filter users who are not already in this team
       const availableUsers = users.filter(user => 
-        !team.members?.some(member => member.id === user.id)
+        !freshTeam.members?.some(member => member.id === user.id)
       );
       
       setSelectedTeam({
-        ...team,
+        ...freshTeam,
         availableUsers: availableUsers
       });
       addMemberForm.resetFields();

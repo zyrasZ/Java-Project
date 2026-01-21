@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/admin/users")  // Bỏ /api vì context-path đã có
+@RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
@@ -54,20 +54,9 @@ public class UserController {
     @PostMapping
     public ResponseEntity<ApiResponse<User>> createUser(@Valid @RequestBody CreateUserRequest request) {
         try {
-            // Log request details
-            System.out.println("📥 Create User Request:");
-            System.out.println("  Email: " + request.getEmail());
-            System.out.println("  Full Name: " + request.getFullName());
-            System.out.println("  Role: " + request.getRole());
-            System.out.println("  Password: " + (request.getPassword() != null ? "***PROVIDED***" : "null"));
-            
             User user = userService.createUser(request);
-            
-            System.out.println("📤 Create User Response: User ID " + user.getId() + " created successfully");
-            
             return ResponseEntity.ok(ApiResponse.success("User created successfully", user));
         } catch (Exception e) {
-            System.err.println("❌ Create User Error: " + e.getMessage());
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to create user: " + e.getMessage()));
         }

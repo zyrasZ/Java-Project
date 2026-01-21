@@ -152,8 +152,22 @@ public class RubricService {
         return rubricCriteriaRepository.findByRubricId(rubricId);
     }
 
-    public List<RubricScore> getTeamScores(Long teamId) {
-        return rubricScoreRepository.findByTeamId(teamId);
+    public List<com.collabsphere.dto.RubricScoreDTO> getTeamScores(Long teamId) {
+        List<RubricScore> scores = rubricScoreRepository.findByTeamId(teamId);
+        return scores.stream().map(score -> new com.collabsphere.dto.RubricScoreDTO(
+            score.getId(),
+            score.getTeam().getId(),
+            score.getTeam().getName(),
+            score.getCriteria().getId(),
+            score.getCriteria().getName(),
+            score.getCriteria().getDescription(),
+            score.getCriteria().getMaxScore(),
+            score.getScore(),
+            score.getCriteria().getWeight(),
+            score.getFeedback(),
+            score.getGradedBy().getFullName(),
+            score.getGradedAt()
+        )).collect(java.util.stream.Collectors.toList());
     }
 
     public Map<String, Object> calculateTeamTotalScore(Long teamId, Long rubricId) {

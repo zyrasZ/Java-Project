@@ -9,15 +9,27 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
     
     List<Team> findByProject(Project project);
     
-    List<Team> findByProjectId(Long projectId);
+    @Query("SELECT DISTINCT t FROM Team t " +
+           "LEFT JOIN FETCH t.members m " +
+           "LEFT JOIN FETCH t.project p " +
+           "LEFT JOIN FETCH p.classRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "WHERE t.project.id = :projectId")
+    List<Team> findByProjectId(@Param("projectId") Long projectId);
     
-    @Query("SELECT t FROM Team t JOIN t.members m WHERE m.id = :userId")
+    @Query("SELECT DISTINCT t FROM Team t " +
+           "LEFT JOIN FETCH t.members m " +
+           "LEFT JOIN FETCH t.project p " +
+           "LEFT JOIN FETCH p.classRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "WHERE m.id = :userId")
     List<Team> findByMemberId(@Param("userId") Long userId);
     
     @Query("SELECT t FROM Team t WHERE t.name LIKE %:name%")
@@ -27,4 +39,21 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     Long countByProjectId(@Param("projectId") Long projectId);
     
     boolean existsByProjectIdAndName(Long projectId, String name);
+    
+    @Query("SELECT DISTINCT t FROM Team t " +
+           "LEFT JOIN FETCH t.members m " +
+           "LEFT JOIN FETCH t.project p " +
+           "LEFT JOIN FETCH p.classRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "WHERE t.id = :id")
+    Optional<Team> findByIdWithDetails(@Param("id") Long id);
+    
+    @Query("SELECT DISTINCT t FROM Team t " +
+           "LEFT JOIN FETCH t.members m " +
+           "LEFT JOIN FETCH t.project p " +
+           "LEFT JOIN FETCH p.classRoom c " +
+           "LEFT JOIN FETCH c.lecturer l " +
+           "LEFT JOIN FETCH c.students s " +
+           "WHERE t.id = :id")
+    Optional<Team> findByIdWithFullDetails(@Param("id") Long id);
 }

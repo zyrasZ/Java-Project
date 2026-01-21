@@ -16,11 +16,14 @@ const Dashboard = () => {
         case 'ADMIN':
           window.location.href = '/admin';
           break;
+        case 'STAFF':
+          window.location.href = '/staff';
+          break;
         case 'LECTURER':
-          // window.location.href = '/lecturer';
+          window.location.href = '/lecturer';
           break;
         case 'STUDENT':
-          // window.location.href = '/student';
+          window.location.href = '/student';
           break;
         case 'HEAD_DEPARTMENT':
           // window.location.href = '/head-department';

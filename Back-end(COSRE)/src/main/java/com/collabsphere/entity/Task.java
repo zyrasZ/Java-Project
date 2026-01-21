@@ -1,12 +1,14 @@
 package com.collabsphere.entity;
 
 import com.collabsphere.entity.enums.TaskStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tasks")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Task {
     
     @Id
@@ -31,11 +33,13 @@ public class Task {
     // Quan hệ với Team
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false)
+    @JsonIgnoreProperties({"members", "project", "tasks", "hibernateLazyInitializer", "handler"})
     private Team team;
     
     // Quan hệ với User (assignee)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
+    @JsonIgnoreProperties({"password", "teams", "assignedTasks", "createdProjects", "hibernateLazyInitializer", "handler"})
     private User assignee;
 
     // Constructors

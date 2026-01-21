@@ -17,12 +17,16 @@ public class Team {
     @Column(nullable = false)
     private String name;
     
-    // Quan hệ với Project
+    @Column
+    private Double grade;
+    
+    @Column(columnDefinition = "TEXT")
+    private String feedback;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
     
-    // Quan hệ với User (members)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "team_members",
@@ -31,20 +35,9 @@ public class Team {
     )
     private Set<User> members = new HashSet<>();
     
-    // Quan hệ với Task
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<Task> tasks = new HashSet<>();
-    
-    // Quan hệ với Submission
-    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Set<Submission> submissions = new HashSet<>();
-    
-    // Quan hệ với Message
-    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Set<Message> messages = new HashSet<>();
+    private Set<WhiteboardData> whiteboardData = new HashSet<>();
 
     // Constructors
     public Team() {}
@@ -71,6 +64,22 @@ public class Team {
         this.name = name;
     }
 
+    public Double getGrade() {
+        return grade;
+    }
+
+    public void setGrade(Double grade) {
+        this.grade = grade;
+    }
+
+    public String getFeedback() {
+        return feedback;
+    }
+
+    public void setFeedback(String feedback) {
+        this.feedback = feedback;
+    }
+
     public Project getProject() {
         return project;
     }
@@ -87,27 +96,11 @@ public class Team {
         this.members = members;
     }
 
-    public Set<Task> getTasks() {
-        return tasks;
+    public Set<WhiteboardData> getWhiteboardData() {
+        return whiteboardData;
     }
 
-    public void setTasks(Set<Task> tasks) {
-        this.tasks = tasks;
-    }
-
-    public Set<Submission> getSubmissions() {
-        return submissions;
-    }
-
-    public void setSubmissions(Set<Submission> submissions) {
-        this.submissions = submissions;
-    }
-
-    public Set<Message> getMessages() {
-        return messages;
-    }
-
-    public void setMessages(Set<Message> messages) {
-        this.messages = messages;
+    public void setWhiteboardData(Set<WhiteboardData> whiteboardData) {
+        this.whiteboardData = whiteboardData;
     }
 }

@@ -3,6 +3,7 @@ package com.collabsphere.controller;
 import com.collabsphere.dto.ApiResponse;
 import com.collabsphere.dto.CreateMilestoneRequest;
 import com.collabsphere.dto.CreateProjectRequest;
+import com.collabsphere.dto.ProjectDTO;
 import com.collabsphere.entity.Milestone;
 import com.collabsphere.entity.Project;
 import com.collabsphere.entity.User;
@@ -14,12 +15,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/projects")  // Bỏ /api vì context-path đã có
+@RequestMapping("/api/projects")
 public class ProjectController {
 
     @Autowired
@@ -66,6 +68,7 @@ public class ProjectController {
     }
 
     @GetMapping("/classroom/{classroomId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Project>>> getProjectsByClassroom(@PathVariable Long classroomId) {
         try {
             List<Project> projects = projectService.getProjectsByClassroom(classroomId);
@@ -76,23 +79,81 @@ public class ProjectController {
         }
     }
 
-    @GetMapping("/my")
+    @GetMapping("/my/dto")
     @PreAuthorize("hasRole('LECTURER')")
-    public ResponseEntity<ApiResponse<List<Project>>> getMyProjects(Authentication authentication) {
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<ProjectDTO>>> getMyProjectsAsDTO(Authentication authentication) {
         try {
+            System.out.println("=== DEBUG: ProjectController.getMyProjectsAsDTO START ===");
+            
+            if (authentication == null || authentication.getPrincipal() == null) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Authentication required"));
+            }
+            
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User lecturer = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-            List<Project> projects = projectService.getProjectsByLecturer(lecturer);
-            return ResponseEntity.ok(ApiResponse.success("Projects retrieved successfully", projects));
+            List<ProjectDTO> projects = projectService.getProjectsByLecturerAsDTO(lecturer);
+            return ResponseEntity.ok(ApiResponse.success("My projects retrieved successfully", projects));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            System.out.println("=== DEBUG: ProjectController.getMyProjectsAsDTO ERROR ===");
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error("Failed to get my projects: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('LECTURER')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<Project>>> getMyProjects(Authentication authentication) {
+        try {
+            System.out.println("=== DEBUG: ProjectController.getMyProjects START ===");
+            
+            if (authentication == null || authentication.getPrincipal() == null) {
+                System.out.println("ERROR: Authentication is null");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Authentication required"));
+            }
+            
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            if (userPrincipal.getId() == null) {
+                System.out.println("ERROR: User ID is null");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("User ID not found"));
+            }
+            
+            System.out.println("UserPrincipal ID: " + userPrincipal.getId());
+            
+            System.out.println("Step 1: Finding user in database...");
+            User lecturer = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            System.out.println("User found: " + lecturer.getEmail() + ", Role: " + lecturer.getRole());
+            
+            System.out.println("Step 2: Calling projectService.getProjectsByLecturer...");
+            List<Project> projects = projectService.getProjectsByLecturer(lecturer);
+            System.out.println("ProjectService returned " + projects.size() + " projects");
+            
+            System.out.println("Step 3: Creating response...");
+            ApiResponse<List<Project>> response = ApiResponse.success("Projects retrieved successfully", projects);
+            System.out.println("Response created successfully");
+            
+            System.out.println("=== DEBUG: ProjectController.getMyProjects SUCCESS ===");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.out.println("=== DEBUG: ProjectController.getMyProjects ERROR ===");
+            System.out.println("Error type: " + e.getClass().getSimpleName());
+            System.out.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get projects: " + e.getMessage()));
         }
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<Project>> getProjectById(@PathVariable Long id) {
         try {
             Project project = projectService.getProjectById(id)
@@ -116,6 +177,7 @@ public class ProjectController {
     }
 
     @GetMapping("/classroom/{classroomId}/active")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Project>>> getActiveProjects(@PathVariable Long classroomId) {
         try {
             List<Project> projects = projectService.getActiveProjects(classroomId);
@@ -194,60 +256,28 @@ public class ProjectController {
         }
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<ApiResponse<String>> testEndpoint() {
-        try {
-            return ResponseEntity.ok(ApiResponse.success("Project controller is working", "Test successful"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Test failed: " + e.getMessage()));
-        }
-    }
-
     @GetMapping("/pending")
     @PreAuthorize("hasRole('HEAD_DEPARTMENT') or hasRole('ADMIN')")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Project>>> getPendingProjects() {
         try {
-            System.out.println("🔍 Getting pending projects...");
             List<Project> projects = projectService.getPendingProjects();
-            System.out.println("📊 Found " + projects.size() + " pending projects");
             return ResponseEntity.ok(ApiResponse.success("Pending projects retrieved successfully", projects));
         } catch (Exception e) {
-            System.err.println("❌ Error getting pending projects: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to get pending projects: " + e.getMessage()));
         }
     }
 
     @GetMapping("/approved")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Project>>> getApprovedProjects() {
         try {
-            System.out.println("🔍 Getting approved projects...");
             List<Project> projects = projectService.getApprovedProjects();
-            System.out.println("📊 Found " + projects.size() + " approved projects");
             return ResponseEntity.ok(ApiResponse.success("Approved projects retrieved successfully", projects));
         } catch (Exception e) {
-            System.err.println("❌ Error getting approved projects: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to get approved projects: " + e.getMessage()));
-        }
-    }
-
-    @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<Project>>> getAllProjects() {
-        try {
-            System.out.println("🔍 Getting all projects...");
-            List<Project> projects = projectService.getAllProjects();
-            System.out.println("📊 Found " + projects.size() + " total projects");
-            return ResponseEntity.ok(ApiResponse.success("All projects retrieved successfully", projects));
-        } catch (Exception e) {
-            System.err.println("❌ Error getting all projects: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Failed to get all projects: " + e.getMessage()));
         }
     }
 }

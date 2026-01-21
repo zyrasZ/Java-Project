@@ -11,13 +11,14 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/api/tasks")
 public class TaskController {
 
     @Autowired
@@ -80,6 +81,7 @@ public class TaskController {
     }
 
     @GetMapping("/teams/{teamId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Task>>> getTasksByTeam(
             @PathVariable Long teamId,
             Authentication authentication) {
@@ -91,12 +93,14 @@ public class TaskController {
             List<Task> tasks = taskService.getTasksByTeam(teamId, user);
             return ResponseEntity.ok(ApiResponse.success("Tasks retrieved successfully", tasks));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            e.printStackTrace(); // Add logging for debugging
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get tasks: " + e.getMessage()));
         }
     }
 
     @GetMapping("/teams/{teamId}/kanban")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<KanbanBoardResponse>> getKanbanBoard(
             @PathVariable Long teamId,
             Authentication authentication) {
@@ -108,12 +112,14 @@ public class TaskController {
             KanbanBoardResponse kanbanBoard = taskService.getKanbanBoard(teamId, user);
             return ResponseEntity.ok(ApiResponse.success("Kanban board retrieved successfully", kanbanBoard));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            e.printStackTrace(); // Add logging for debugging
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get kanban board: " + e.getMessage()));
         }
     }
 
     @GetMapping("/teams/{teamId}/status/{status}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Task>>> getTasksByTeamAndStatus(
             @PathVariable Long teamId,
             @PathVariable TaskStatus status,
@@ -126,31 +132,101 @@ public class TaskController {
             List<Task> tasks = taskService.getTasksByTeamAndStatus(teamId, status, user);
             return ResponseEntity.ok(ApiResponse.success("Tasks retrieved successfully", tasks));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            e.printStackTrace(); // Add logging for debugging
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get tasks: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<Task>>> getMyTasks(Authentication authentication) {
+    @GetMapping("/my/dto")
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getMyTasksAsDTO(Authentication authentication) {
         try {
+            System.out.println("=== DEBUG: TaskController.getMyTasksAsDTO START ===");
+            
+            if (authentication == null || authentication.getPrincipal() == null) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Authentication required"));
+            }
+            
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-            List<Task> tasks = taskService.getMyTasks(user);
+            List<TaskDTO> tasks = taskService.getMyTasksAsDTO(user);
             return ResponseEntity.ok(ApiResponse.success("My tasks retrieved successfully", tasks));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            System.out.println("=== DEBUG: TaskController.getMyTasksAsDTO ERROR ===");
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error("Failed to get my tasks: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/my")
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<Task>>> getMyTasks(Authentication authentication) {
+        try {
+            System.out.println("=== DEBUG: TaskController.getMyTasks START ===");
+            
+            if (authentication == null || authentication.getPrincipal() == null) {
+                System.out.println("ERROR: Authentication is null");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Authentication required"));
+            }
+            
+            System.out.println("Authentication type: " + authentication.getClass().getSimpleName());
+            System.out.println("Principal type: " + authentication.getPrincipal().getClass().getSimpleName());
+            
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            if (userPrincipal.getId() == null) {
+                System.out.println("ERROR: User ID is null");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("User ID not found"));
+            }
+            
+            System.out.println("UserPrincipal ID: " + userPrincipal.getId());
+            
+            System.out.println("Step 1: Finding user in database...");
+            User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            System.out.println("User found: " + user.getEmail());
+            
+            System.out.println("Step 2: Calling taskService.getMyTasks...");
+            List<Task> tasks = taskService.getMyTasks(user);
+            System.out.println("TaskService returned " + tasks.size() + " tasks");
+            
+            System.out.println("Step 3: Creating response...");
+            ApiResponse<List<Task>> response = ApiResponse.success("My tasks retrieved successfully", tasks);
+            System.out.println("Response created successfully");
+            
+            System.out.println("Step 4: Returning ResponseEntity...");
+            ResponseEntity<ApiResponse<List<Task>>> result = ResponseEntity.ok(response);
+            System.out.println("=== DEBUG: TaskController.getMyTasks SUCCESS ===");
+            
+            return result;
+            
+        } catch (Exception e) {
+            System.out.println("=== DEBUG: TaskController.getMyTasks ERROR ===");
+            System.out.println("Error type: " + e.getClass().getSimpleName());
+            System.out.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get my tasks: " + e.getMessage()));
         }
     }
 
     @GetMapping("/my/status/{status}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Task>>> getMyTasksByStatus(
             @PathVariable TaskStatus status,
             Authentication authentication) {
         try {
+            if (authentication == null || authentication.getPrincipal() == null) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Authentication required"));
+            }
+            
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -158,12 +234,14 @@ public class TaskController {
             List<Task> tasks = taskService.getMyTasksByStatus(user, status);
             return ResponseEntity.ok(ApiResponse.success("My tasks retrieved successfully", tasks));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            e.printStackTrace(); // Add logging for debugging
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get my tasks: " + e.getMessage()));
         }
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<Task>> getTaskById(
             @PathVariable Long id,
             Authentication authentication) {
@@ -179,12 +257,14 @@ public class TaskController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            e.printStackTrace(); // Add logging for debugging
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get task: " + e.getMessage()));
         }
     }
 
     @GetMapping("/teams/{teamId}/overdue")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<Task>>> getOverdueTasks(
             @PathVariable Long teamId,
             Authentication authentication) {
@@ -196,7 +276,8 @@ public class TaskController {
             List<Task> tasks = taskService.getOverdueTasks(teamId, user);
             return ResponseEntity.ok(ApiResponse.success("Overdue tasks retrieved successfully", tasks));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
+            e.printStackTrace(); // Add logging for debugging
+            return ResponseEntity.status(500)
                 .body(ApiResponse.error("Failed to get overdue tasks: " + e.getMessage()));
         }
     }

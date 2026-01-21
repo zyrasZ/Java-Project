@@ -35,6 +35,7 @@ body {
 /* Ant Design customizations */
 .ant-layout {
   min-height: 100vh;
+  background: #f0f2f5;
 }
 
 .ant-layout-header {
@@ -44,16 +45,22 @@ body {
 }
 
 .ant-layout-sider {
-  background: #fff;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  background: #fff !important;
 }
 
 .ant-layout-content {
-  margin: 24px;
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #f0f2f5;
+  min-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.ant-menu {
+  border-right: none !important;
+}
+
+.ant-menu-item-selected {
+  background-color: #e6f7ff !important;
+  color: #1890ff !important;
 }
 
 .logo {
