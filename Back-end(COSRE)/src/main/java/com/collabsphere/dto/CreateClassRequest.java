@@ -9,11 +9,15 @@ public class CreateClassRequest {
     @NotBlank(message = "Class code is required")
     private String code;
 
+    // Optional - only required when ADMIN creates classroom for another lecturer
+    private Long lecturerId;
+
     public CreateClassRequest() {}
 
-    public CreateClassRequest(String name, String code) {
+    public CreateClassRequest(String name, String code, Long lecturerId) {
         this.name = name;
         this.code = code;
+        this.lecturerId = lecturerId;
     }
 
     public String getName() {
@@ -30,5 +34,13 @@ public class CreateClassRequest {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public Long getLecturerId() {
+        return lecturerId;
+    }
+
+    public void setLecturerId(Long lecturerId) {
+        this.lecturerId = lecturerId;
     }
 }

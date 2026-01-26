@@ -1,5 +1,6 @@
 package com.collabsphere.dto;
 
+import com.collabsphere.entity.enums.ProjectStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -17,6 +18,8 @@ public class CreateProjectRequest {
     @NotNull(message = "Classroom ID is required")
     private Long classroomId;
 
+    private ProjectStatus status = ProjectStatus.PENDING; // Mặc định là PENDING
+
     public CreateProjectRequest() {}
 
     public CreateProjectRequest(String title, String description, LocalDateTime deadline, Long classroomId) {
@@ -24,6 +27,15 @@ public class CreateProjectRequest {
         this.description = description;
         this.deadline = deadline;
         this.classroomId = classroomId;
+        this.status = ProjectStatus.PENDING;
+    }
+
+    public CreateProjectRequest(String title, String description, LocalDateTime deadline, Long classroomId, ProjectStatus status) {
+        this.title = title;
+        this.description = description;
+        this.deadline = deadline;
+        this.classroomId = classroomId;
+        this.status = status;
     }
 
     public String getTitle() {
@@ -56,5 +68,13 @@ public class CreateProjectRequest {
 
     public void setClassroomId(Long classroomId) {
         this.classroomId = classroomId;
+    }
+
+    public ProjectStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ProjectStatus status) {
+        this.status = status;
     }
 }

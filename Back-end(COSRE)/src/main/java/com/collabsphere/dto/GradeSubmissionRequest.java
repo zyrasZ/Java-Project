@@ -10,7 +10,7 @@ public class GradeSubmissionRequest {
 
     @NotNull(message = "Grade is required")
     @Min(value = 0, message = "Grade must be at least 0")
-    @Max(value = 100, message = "Grade must be at most 100")
+    @Max(value = 10, message = "Grade must be at most 10")
     private Double grade;
 
     private String feedback;
